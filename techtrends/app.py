@@ -1,3 +1,4 @@
+import sys
 import sqlite3
 import logging
 from flask import Flask, jsonify, json, render_template, request, url_for, redirect, flash
@@ -8,9 +9,23 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your secret key'
 app.config['DB_CONNECTION_COUNT'] = 0
 
+app.logger.handlers.clear()
+
 formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel(logging.DEBUG)
+stdout_handler.setFormatter(formatter)
+
+stderr_handler = logging.StreamHandler(sys.stderr)
+stderr_handler.setLevel(logging.ERROR)
+stderr_handler.setFormatter(formatter)
+
+app.logger.addHandler(stdout_handler)
+app.logger.addHandler(stderr_handler)
+
 app.logger.setLevel(logging.DEBUG)
+app.logger.propagate = False
 
 werkzeug_logger = logging.getLogger('werkzeug')
 werkzeug_logger.setLevel(logging.INFO)
@@ -43,7 +58,7 @@ def index():
 def post(post_id):
     post = get_post(post_id)
     if post is None:
-      app.logger.debug('404 not found')
+      app.logger.error('404 not found')
       return render_template('404.html'), 404
     else:
       title = post['title']
